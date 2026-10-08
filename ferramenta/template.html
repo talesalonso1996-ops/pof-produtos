@@ -108,6 +108,7 @@ footer { margin-top: 40px; padding-top: 16px; border-top: 2px solid var(--ink); 
 footer p { max-width: 95ch; }
 </style>
 
+<div role="note" id="aviso-harmo" style="background:#fbece7;color:#13202c;border-bottom:2px solid #b23c22;padding:10px 16px;font-size:.92rem;line-height:1.45;text-align:center"><b>Aviso:</b> a harmonização v2 de produtos tem erros de classificação conhecidos (condomínio, compra de imóveis, celular e outros). Até que sejam corrigidos na origem, esta ferramenta usa as correções provisórias do pacote pofanalise. <a href="https://talesalonso1996-ops.github.io/pofanalise/articles/erros-harmonizacao.html" style="color:#8a2a14;font-weight:600">Veja a lista e o efeito de cada correção</a>.</div>
 <div class="wrap">
   <header class="top">
     <span class="label">Harmonização de produtos de Arthur Welle · POF 1987-2018</span>
@@ -154,6 +155,7 @@ footer p { max-width: 95ch; }
     <p><b>Prevalência</b>: % das famílias (unidades de consumo) com gasto no produto no período de referência do questionário, que varia por item (7 dias para alimentos da caderneta, 30 ou 90 dias para serviços, 12 meses para bens duráveis). Compare a prevalência do mesmo produto entre edições ou recortes, não entre produtos de períodos diferentes.</p>
     <p><b>% do gasto da categoria</b>: participação do produto no gasto do seu Nível 1 da harmonização (por exemplo, arroz dentro de "Cereais e leguminosas"). <b>% do gasto total</b>: participação na despesa de consumo (Níveis 1 a 26). Para comparar 1987 e 1995 com as edições seguintes, marque "sem aluguel": o aluguel estimado de quem mora em imóvel próprio só existe de 2002 em diante.</p>
     <p><b>n/d</b>: o produto não foi investigado na edição, ou seu código original é o mesmo de outra folha (por exemplo, peixe fresco e salgado) e o gasto não pode ser separado nos microdados. <b>?</b>: o código indicado pela harmonização não tem registro nos microdados da edição; o zero pode ser erro de código. Passe o cursor para ver o motivo.</p>
+    <p><b>Erros conhecidos na harmonização</b>: a v2 põe o condomínio fora do consumo em 2008 e 2017, a compra de imóveis em "Imóveis de uso ocasional" de 1987 a 2008 e contas de celular, itens de veículos e o papel higiênico em grupos errados. Os números desta ferramenta usam as correções provisórias de <code>pof_correcoes()</code>: por exemplo, "Condomínio" aparece em "Outros serviços e taxas de habitação" e a compra de imóveis não entra no consumo. A folha "Outras despesas correntes" fica fora da ferramenta por não ser consumo.</p>
     <p><b>Recortes</b>: 1987-1988 e 1995-1996 só cobrem as regiões metropolitanas; o Brasil começa em 2002-2003. Intervalos de confiança de 95% do desenho amostral (UPA e estrato) aparecem ao passar o cursor sobre os valores, de 2002 em diante. A POF 1987-1988 está em cruzados, por isso não tem gasto em reais.</p>
     <p class="mono" style="font-size:.78rem">Fonte: IBGE, POF 1987-2018, microdados harmonizados (HarmonizaPOF2026) com a harmonização de produtos v2 de Arthur Welle e as correções de pofanalise::pof_correcoes(). Cálculo: pof-produtos/R/calcular.R. Gerado em <span id="gerado"></span>.</p>
   </footer>

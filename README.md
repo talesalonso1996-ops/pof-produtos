@@ -56,6 +56,8 @@ Rscript R/gerar_ferramenta.R
 
 ## Cuidados
 
+- **Erros conhecidos na harmonização v2.** O condomínio fica fora do consumo em 2008 e 2017, a compra de imóveis entra como consumo de 1987 a 2008, e há contas de celular, itens de veículos e o papel higiênico em grupos errados. Até a correção na origem, os números usam as correções provisórias de `pof_correcoes()` do pacote pofanalise ([lista completa](https://talesalonso1996-ops.github.io/pofanalise/articles/erros-harmonizacao.html)).
+
 - A prevalência depende do período de referência do questionário (7 dias para os alimentos da caderneta, 30 ou 90 dias para serviços, 12 meses para bens duráveis). Compare o mesmo produto entre edições ou recortes, não produtos de períodos diferentes.
 - 1987-1988 e 1995-1996 só cobrem as regiões metropolitanas. Para comparar o % do gasto total com essas edições, use a versão sem aluguel.
 - Folhas com qualidade média ou baixa podem estar ausentes em alguma edição; a ferramenta marca essas folhas. Ver a [validação com o IBGE](https://github.com/talesalonso1996-ops/pofanalise) no pacote pofanalise, que aponta itens trocados na harmonização em 2008-2009 e 2017-2018.
