@@ -7,6 +7,8 @@ Ferramenta interativa que mostra, para **cada produto da harmonização de Arthu
 - **% do gasto total**: participação na despesa de consumo, com ou sem o aluguel;
 - **Gasto médio mensal por família**, em reais de janeiro de 2018 (IPCA).
 
+Duas visões: **por edição** (escolhe-se a edição; as colunas são as métricas) e **por métrica** (escolhe-se a métrica; as colunas são as edições, com a variação entre a primeira e a última).
+
 Recortes: Brasil (2002-2003 em diante, com intervalos de confiança de 95% do desenho amostral) e conjunto das regiões metropolitanas (as cinco edições).
 
 ## Arquivos

@@ -85,8 +85,12 @@ tbody tr.ativo { background: var(--sel); }
 .badge { display: inline-block; font: 600 .66rem/1 var(--font-body); padding: 3px 6px; border-radius: 4px; background: var(--warn-bg); color: var(--warn); margin-left: 6px; vertical-align: 1px; }
 .cel { display: grid; grid-template-columns: 58px 1fr; gap: 8px; align-items: center; min-width: 150px; }
 .cel span { text-align: right; }
+table.compacta .cel { min-width: 96px; grid-template-columns: 46px 1fr; gap: 6px; }
+table.compacta .prod { min-width: 220px; }
+table.compacta th, table.compacta td { padding-inline: 8px; }
 .bar { height: 8px; border-radius: 0 4px 4px 0; background: var(--bar); min-width: 1px; }
 .bar.b2 { background: var(--bar-2); } .bar.b3 { background: var(--bar-3); }
+.var.sobe { color: var(--accent); font-weight: 600; } .var.desce { color: var(--br); font-weight: 600; }
 .vazio { padding: 28px; text-align: center; color: var(--muted); }
 
 aside.detalhe { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 14px; align-content: start; position: sticky; top: 90px; max-height: calc(100vh - 110px); overflow-y: auto; }
@@ -115,24 +119,27 @@ footer p { max-width: 95ch; }
   </header>
 
   <div class="controls" role="region" aria-label="Filtros">
-    <div class="field"><span class="label" id="l-ed">Edição</span><div class="seg" role="group" aria-labelledby="l-ed" id="eds"></div></div>
+    <div class="field"><span class="label" id="l-modo">Visão</span><div class="seg" role="group" aria-labelledby="l-modo" id="modos">
+      <button type="button" data-m="edicao" title="Escolha uma edição; as colunas são as métricas">Por edição</button>
+      <button type="button" data-m="metrica" title="Escolha uma métrica; as colunas são as edições">Por métrica</button></div></div>
+    <div class="field" id="f-ed"><span class="label" id="l-ed">Edição</span><div class="seg" role="group" aria-labelledby="l-ed" id="eds"></div></div>
+    <div class="field" id="f-met" hidden><label class="label" for="met">Métrica</label><select id="met">
+      <option value="prev">Prevalência (% das famílias)</option>
+      <option value="cat">% do gasto da categoria</option>
+      <option value="tot">% do gasto total</option>
+      <option value="tot_sa">% do gasto total sem aluguel</option>
+      <option value="gasto">Gasto médio mensal (R$ de 2018)</option></select></div>
     <div class="field"><span class="label" id="l-rec">Recorte</span><div class="seg" role="group" aria-labelledby="l-rec" id="recs"></div></div>
     <div class="field"><label class="label" for="cat">Categoria</label><select id="cat"></select></div>
     <div class="field"><label class="label" for="busca">Buscar produto</label><input type="search" id="busca" placeholder="ex.: arroz, gasolina"></div>
-    <label class="check"><input type="checkbox" id="sa"> % do gasto total sem aluguel</label>
+    <label class="check" id="f-sa"><input type="checkbox" id="sa"> % do gasto total sem aluguel</label>
   </div>
   <p class="aviso" id="aviso" hidden></p>
   <p class="resumo" id="resumo"></p>
 
   <div class="layout" id="layout">
     <div class="tbl-wrap"><table id="tab">
-      <thead><tr>
-        <th data-k="produto" scope="col">Produto</th>
-        <th data-k="prevalencia" scope="col" title="% das famílias (unidades de consumo) com gasto no produto no período de referência">Prevalência (% das famílias)</th>
-        <th data-k="part_categoria" scope="col" title="Participação do produto no gasto da sua categoria (Nível 1 da harmonização)">% do gasto da categoria</th>
-        <th data-k="part_total" scope="col" title="Participação do produto na despesa de consumo">% do gasto total</th>
-        <th data-k="gasto_medio_2018" scope="col" title="Gasto médio mensal por família, incluindo quem não comprou, em reais de janeiro de 2018 (IPCA)">Gasto médio (R$ de 2018)</th>
-      </tr></thead>
+      <thead><tr id="cab"></tr></thead>
       <tbody id="corpo"></tbody>
     </table></div>
     <aside class="detalhe" id="detalhe" hidden aria-live="polite"></aside>
@@ -140,6 +147,7 @@ footer p { max-width: 95ch; }
 
   <footer>
     <h3>Como ler</h3>
+    <p><b>Duas visões</b>: em <b>Por edição</b>, escolha uma edição e compare as métricas de cada produto lado a lado; em <b>Por métrica</b>, escolha uma métrica e acompanhe cada produto ao longo das edições, com a variação entre a primeira e a última.</p>
     <p><b>Prevalência</b>: % das famílias (unidades de consumo) com gasto no produto no período de referência do questionário, que varia por item (7 dias para alimentos da caderneta, 30 ou 90 dias para serviços, 12 meses para bens duráveis). Compare a prevalência do mesmo produto entre edições ou recortes, não entre produtos de períodos diferentes.</p>
     <p><b>% do gasto da categoria</b>: participação do produto no gasto do seu Nível 1 da harmonização (por exemplo, arroz dentro de "Cereais e leguminosas"). <b>% do gasto total</b>: participação na despesa de consumo (Níveis 1 a 26). Para comparar 1987 e 1995 com as edições seguintes, marque "sem aluguel": o aluguel estimado de quem mora em imóvel próprio só existe de 2002 em diante.</p>
     <p><b>Recortes</b>: 1987-1988 e 1995-1996 só cobrem as regiões metropolitanas; o Brasil começa em 2002-2003. Intervalos de confiança de 95% do desenho amostral (UPA e estrato) aparecem ao passar o cursor sobre os valores, de 2002 em diante. A POF 1987-1988 está em cruzados, por isso não tem gasto em reais.</p>
@@ -164,54 +172,119 @@ window.PRODUTOS = {"gerado":"08/10/2026","produtos":[{"cod":"01101","produto":"A
   const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-  const st = { ed: 4, rec: 0, cat: "", q: "", sa: false, sort: "part_total", dir: -1, sel: null };
+  const st = { modo: "edicao", met: "prev", ed: 4, rec: 0, cat: "", q: "", sa: false, sort: "part_total", dir: -1, sel: null };
   try { const s = JSON.parse(localStorage.getItem("pof-produtos") || "{}"); Object.assign(st, s, { sel: null, q: "" }); } catch (e) {}
-  const salvar = () => { try { localStorage.setItem("pof-produtos", JSON.stringify({ ed: st.ed, rec: st.rec, cat: st.cat, sa: st.sa, sort: st.sort, dir: st.dir })); } catch (e) {} };
+  const salvar = () => { try { localStorage.setItem("pof-produtos", JSON.stringify({ modo: st.modo, met: st.met, ed: st.ed, rec: st.rec, cat: st.cat, sa: st.sa, sort: st.sort, dir: st.dir })); } catch (e) {} };
 
   document.getElementById("gerado").textContent = D.gerado;
   document.getElementById("f-prod").textContent = P.length;
   const cats = [...new Map(P.map(p => [p.categoria, p.n1])).entries()].sort((a, b) => a[1] - b[1]);
   document.getElementById("f-cat").textContent = cats.length;
 
+  // metricas: posicao do valor (e do IC) na linha de dados, casas decimais e cor da barra
+  const MET = {
+    prev:   { nome: "Prevalência (% das famílias)", i: 3, li: 4, ls: 5, d: 1, cls: "" },
+    cat:    { nome: "% do gasto da categoria", i: 6, d: 2, cls: "b2" },
+    tot:    { nome: "% do gasto total", i: 7, li: 8, ls: 9, d: 3, cls: "b3" },
+    tot_sa: { nome: "% do gasto total sem aluguel", i: 10, d: 3, cls: "b3" },
+    gasto:  { nome: "Gasto médio mensal (R$ de 2018)", i: 11, d: 2, cls: "" }
+  };
+
   // controles
-  const eds = document.getElementById("eds"), recs = document.getElementById("recs");
+  const modos = document.getElementById("modos"), eds = document.getElementById("eds"), recs = document.getElementById("recs");
   ED.forEach((e, i) => { const b = document.createElement("button"); b.type = "button"; b.textContent = e; b.dataset.i = i; eds.append(b); });
   ["Brasil", "Regiões metropolitanas"].forEach((r, i) => { const b = document.createElement("button"); b.type = "button"; b.textContent = r; b.dataset.i = i; recs.append(b); });
-  const selCat = document.getElementById("cat");
+  const selCat = document.getElementById("cat"), selMet = document.getElementById("met");
   selCat.append(new Option("Todas as categorias", ""));
   cats.forEach(([c, n]) => selCat.append(new Option(n + ". " + c, c)));
   const busca = document.getElementById("busca"), chkSa = document.getElementById("sa");
 
+  modos.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (st.modo !== b.dataset.m) { st.modo = b.dataset.m; st.sort = st.modo === "edicao" ? "part_total" : "e" + ultimaEd(); st.dir = -1; } render(); });
   eds.addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; st.ed = +b.dataset.i; if (st.ed < 2) st.rec = 1; render(); });
-  recs.addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; st.rec = +b.dataset.i; render(); });
+  recs.addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; st.rec = +b.dataset.i; if (st.modo === "metrica" && /^e\d$/.test(st.sort) && !edsVisiveis().includes(+st.sort.slice(1))) st.sort = "e" + ultimaEd(); render(); });
+  selMet.addEventListener("change", () => { st.met = selMet.value; render(); });
   selCat.addEventListener("change", () => { st.cat = selCat.value; render(); });
   busca.addEventListener("input", () => { st.q = busca.value; render(); });
   chkSa.addEventListener("change", () => { st.sa = chkSa.checked; render(); });
-  document.querySelectorAll("thead th").forEach(th => th.addEventListener("click", () => {
+  document.getElementById("cab").addEventListener("click", e => {
+    const th = e.target.closest("th[data-k]"); if (!th) return;
     const k = th.dataset.k; if (st.sort === k) st.dir = -st.dir; else { st.sort = k; st.dir = k === "produto" ? 1 : -1; } render();
-  }));
+  });
 
-  function linha(pi) {
+  const edsVisiveis = () => st.rec === 0 ? [2, 3, 4] : [0, 1, 2, 3, 4];
+  const ultimaEd = () => 4;
+  const ic = (a, b, d) => a == null ? "" : ` title="IC 95%: ${nf(a, d)} a ${nf(b, d)}"`;
+  const cel = (v, m, cls, d, titulo) => `<div class="cel"${titulo}><span>${nf(v, d)}</span><div class="bar ${cls}" style="width:${v == null ? 0 : Math.max(0.5, 100 * Math.max(v, 0) / m)}%"></div></div>`;
+  const celProd = p => {
+    const q = p.qualidade && p.qualidade !== "Alta" ? `<span class="badge" title="Qualidade da harmonização: ${esc(p.qualidade)}">${esc(p.qualidade.split(" ")[0])}</span>` : "";
+    return `<td class="prod"><b>${esc(p.produto)}${q}</b><small>${esc(p.categoria)} · ${esc(p.subcategoria)} · <span class="mono">${p.cod}</span></small></td>`;
+  };
+
+  // visao "por edicao": uma edicao, colunas = metricas
+  function linhaEdicao(pi) {
     const r = byKey.get(pi + "|" + st.ed + "|" + st.rec);
     if (!r) return null;
     return { pi, prevalencia: r[3], prev_li: r[4], prev_ls: r[5], part_categoria: r[6],
              part_total: st.sa ? r[10] : r[7], tot_li: st.sa ? null : r[8], tot_ls: st.sa ? null : r[9], gasto_medio_2018: r[11] };
   }
+  // visao "por metrica": uma metrica, colunas = edicoes
+  function linhaMetrica(pi) {
+    const m = MET[st.met], o = { pi }; let algum = false;
+    edsVisiveis().forEach(e => {
+      const r = byKey.get(pi + "|" + e + "|" + st.rec);
+      o["e" + e] = r ? r[m.i] : null; o["li" + e] = r && m.li ? r[m.li] : null; o["ls" + e] = r && m.ls ? r[m.ls] : null;
+      if (o["e" + e] != null) algum = true;
+    });
+    const ev = edsVisiveis(), a = o["e" + ev[0]], b = o["e" + ev[ev.length - 1]];
+    o.var = a != null && b != null ? b - a : null;
+    return algum ? o : null;
+  }
 
   function render() {
-    if (st.ed < 2 && st.rec === 0) st.rec = 1;
+    const porMet = st.modo === "metrica";
+    document.getElementById("tab").classList.toggle("compacta", porMet);
+    if (!porMet && st.ed < 2 && st.rec === 0) st.rec = 1;
+    modos.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === st.modo)));
+    document.getElementById("f-ed").hidden = porMet;
+    document.getElementById("f-met").hidden = !porMet;
+    document.getElementById("f-sa").hidden = porMet;
     eds.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.i === st.ed)));
-    recs.querySelectorAll("button").forEach(b => { const i = +b.dataset.i; b.setAttribute("aria-pressed", String(i === st.rec)); b.disabled = i === 0 && st.ed < 2; b.title = b.disabled ? "1987 e 1995 só cobrem as regiões metropolitanas" : ""; });
-    selCat.value = st.cat; chkSa.checked = st.sa;
-    const av = document.getElementById("aviso");
+    recs.querySelectorAll("button").forEach(b => { const i = +b.dataset.i; b.setAttribute("aria-pressed", String(i === st.rec));
+      b.disabled = !porMet && i === 0 && st.ed < 2; b.title = b.disabled ? "1987 e 1995 só cobrem as regiões metropolitanas" : ""; });
+    selCat.value = st.cat; chkSa.checked = st.sa; selMet.value = st.met;
+    if (porMet && !/^(produto|var|e\d)$/.test(st.sort)) { st.sort = "e" + ultimaEd(); st.dir = -1; }
+    if (!porMet && !/^(produto|prevalencia|part_categoria|part_total|gasto_medio_2018)$/.test(st.sort)) { st.sort = "part_total"; st.dir = -1; }
+
     const msgs = [];
-    if (st.ed < 2) msgs.push("1987-1988 e 1995-1996 só cobrem as regiões metropolitanas.");
-    if (st.ed < 2 && !st.sa) msgs.push("Para comparar o % do gasto total com as edições seguintes, marque “sem aluguel”.");
-    if (st.ed === 0) msgs.push("A POF 1987-1988 está em cruzados: não há gasto em reais.");
-    av.hidden = !msgs.length; av.textContent = msgs.join(" ");
+    if (!porMet && st.ed < 2) msgs.push("1987-1988 e 1995-1996 só cobrem as regiões metropolitanas.");
+    if (!porMet && st.ed < 2 && !st.sa) msgs.push("Para comparar o % do gasto total com as edições seguintes, marque “sem aluguel”.");
+    if (!porMet && st.ed === 0) msgs.push("A POF 1987-1988 está em cruzados: não há gasto em reais.");
+    if (porMet && st.rec === 0) msgs.push("O Brasil só tem dados de 2002-2003 em diante; para ver 1987 e 1995, escolha as regiões metropolitanas.");
+    if (porMet && st.rec === 1 && st.met === "tot") msgs.push("Entre 1995 e 2002 o % do gasto total muda também porque o aluguel estimado passa a existir; para comparar as cinco edições, use “% do gasto total sem aluguel”.");
+    if (porMet && st.met === "gasto") msgs.push("A POF 1987-1988 está em cruzados: não há gasto em reais.");
+    if (porMet && st.met === "prev") msgs.push("A prevalência depende do período de referência do item; compare o mesmo produto entre edições.");
+    const av = document.getElementById("aviso"); av.hidden = !msgs.length; av.textContent = msgs.join(" ");
+
+    // cabecalho
+    const cab = document.getElementById("cab");
+    const th = (k, t, title) => `<th data-k="${k}" scope="col"${title ? ` title="${esc(title)}"` : ""} aria-sort="${st.sort === k ? (st.dir < 0 ? "descending" : "ascending") : "none"}">${t}</th>`;
+    let cols;
+    if (porMet) {
+      const m = MET[st.met], ev = edsVisiveis();
+      cab.innerHTML = th("produto", "Produto") + ev.map(e => th("e" + e, ED[e])).join("") +
+        th("var", `Variação ${ED[ev[0]].slice(0, 4)}–${ED[ev[ev.length - 1]].slice(0, 4)}`, st.met === "gasto" ? "Diferença em R$ de 2018" : "Diferença em pontos percentuais");
+      cols = ev.length + 2;
+    } else {
+      cab.innerHTML = th("produto", "Produto") +
+        th("prevalencia", "Prevalência (% das famílias)", "% das famílias (unidades de consumo) com gasto no produto no período de referência") +
+        th("part_categoria", "% do gasto da categoria", "Participação do produto no gasto da sua categoria (Nível 1 da harmonização)") +
+        th("part_total", st.sa ? "% do gasto total (sem aluguel)" : "% do gasto total", "Participação do produto na despesa de consumo") +
+        th("gasto_medio_2018", "Gasto médio (R$ de 2018)", "Gasto médio mensal por família, incluindo quem não comprou, em reais de janeiro de 2018 (IPCA)");
+      cols = 5;
+    }
 
     const q = norm(st.q.trim());
-    let rows = P.map((p, i) => ({ p, l: linha(i) })).filter(o => o.l &&
+    let rows = P.map((p, i) => ({ p, l: porMet ? linhaMetrica(i) : linhaEdicao(i) })).filter(o => o.l &&
       (!st.cat || o.p.categoria === st.cat) &&
       (!q || norm(o.p.produto + " " + o.p.subcategoria + " " + o.p.categoria + " " + o.p.cod).includes(q)));
     const k = st.sort;
@@ -221,27 +294,31 @@ window.PRODUTOS = {"gerado":"08/10/2026","produtos":[{"cod":"01101","produto":"A
       if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
       return st.dir * (x - y);
     });
-    document.querySelectorAll("thead th").forEach(th => th.setAttribute("aria-sort", th.dataset.k === k ? (st.dir < 0 ? "descending" : "ascending") : "none"));
-    document.querySelector('thead th[data-k="part_total"]').textContent = st.sa ? "% do gasto total (sem aluguel)" : "% do gasto total";
 
-    const mx = { prevalencia: 100, part_categoria: Math.max(...rows.map(o => o.l.part_categoria || 0), 1e-9),
-                 part_total: Math.max(...rows.map(o => o.l.part_total || 0), 1e-9) };
     const corpo = document.getElementById("corpo");
-    if (!rows.length) { corpo.innerHTML = `<tr><td colspan="5" class="vazio">Nenhum produto com esses filtros.</td></tr>`; }
-    else corpo.innerHTML = rows.map(({ p, l }) => {
-      const ic = (a, b) => a == null ? "" : ` title="IC 95%: ${nf(a, 2)} a ${nf(b, 2)}"`;
-      const cel = (v, m, cls, d, titulo) => `<div class="cel"${titulo}><span>${nf(v, d)}</span><div class="bar ${cls}" style="width:${v == null ? 0 : Math.max(0.5, 100 * v / m)}%"></div></div>`;
-      const q = p.qualidade && p.qualidade !== "Alta" ? `<span class="badge" title="Qualidade da harmonização: ${esc(p.qualidade)}">${esc(p.qualidade.split(" ")[0])}</span>` : "";
-      return `<tr tabindex="0" data-pi="${l.pi}" class="${st.sel === l.pi ? "ativo" : ""}">
-        <td class="prod"><b>${esc(p.produto)}${q}</b><small>${esc(p.categoria)} · ${esc(p.subcategoria)} · <span class="mono">${p.cod}</span></small></td>
-        <td>${cel(l.prevalencia, mx.prevalencia, "", 1, ic(l.prev_li, l.prev_ls))}</td>
+    if (!rows.length) corpo.innerHTML = `<tr><td colspan="${cols}" class="vazio">Nenhum produto com esses filtros.</td></tr>`;
+    else if (porMet) {
+      const m = MET[st.met], ev = edsVisiveis();
+      const mx = Math.max(...rows.flatMap(o => ev.map(e => o.l["e" + e] || 0)), 1e-9);
+      const dv = st.met === "gasto" ? 2 : m.d;
+      corpo.innerHTML = rows.map(({ p, l }) => `<tr tabindex="0" data-pi="${l.pi}" class="${st.sel === l.pi ? "ativo" : ""}">${celProd(p)}` +
+        ev.map(e => `<td>${cel(l["e" + e], mx, m.cls, m.d, ic(l["li" + e], l["ls" + e], m.d))}</td>`).join("") +
+        `<td class="num var ${l.var == null ? "" : l.var > 0 ? "sobe" : l.var < 0 ? "desce" : ""}">${l.var == null ? "–" : (l.var > 0 ? "+" : "") + nf(l.var, dv)}</td></tr>`).join("");
+    } else {
+      const mx = { prevalencia: 100, part_categoria: Math.max(...rows.map(o => o.l.part_categoria || 0), 1e-9),
+                   part_total: Math.max(...rows.map(o => o.l.part_total || 0), 1e-9) };
+      corpo.innerHTML = rows.map(({ p, l }) => `<tr tabindex="0" data-pi="${l.pi}" class="${st.sel === l.pi ? "ativo" : ""}">${celProd(p)}
+        <td>${cel(l.prevalencia, mx.prevalencia, "", 1, ic(l.prev_li, l.prev_ls, 2))}</td>
         <td>${cel(l.part_categoria, mx.part_categoria, "b2", 2, "")}</td>
-        <td>${cel(l.part_total, mx.part_total, "b3", 3, ic(l.tot_li, l.tot_ls))}</td>
-        <td class="num">${l.gasto_medio_2018 == null ? "–" : nf(l.gasto_medio_2018, 2)}</td></tr>`;
-    }).join("");
-    const soma = rows.reduce((s, o) => s + (o.l.part_total || 0), 0);
-    document.getElementById("resumo").textContent = `${rows.length} produtos · ${ED[st.ed]} · ${["Brasil", "regiões metropolitanas"][st.rec]}` +
-      ` · juntos, ${nf(soma, 1)}% do gasto total${st.sa ? " sem aluguel" : ""}. Passe o cursor sobre um valor para ver o IC de 95%.`;
+        <td>${cel(l.part_total, mx.part_total, "b3", 3, ic(l.tot_li, l.tot_ls, 3))}</td>
+        <td class="num">${l.gasto_medio_2018 == null ? "–" : nf(l.gasto_medio_2018, 2)}</td></tr>`).join("");
+    }
+    const rec = ["Brasil", "regiões metropolitanas"][st.rec];
+    if (porMet) document.getElementById("resumo").textContent = `${rows.length} produtos · ${MET[st.met].nome} · ${rec} · edições nas colunas. Passe o cursor sobre um valor para ver o IC de 95% (2002 em diante).`;
+    else {
+      const soma = rows.reduce((s, o) => s + (o.l.part_total || 0), 0);
+      document.getElementById("resumo").textContent = `${rows.length} produtos · ${ED[st.ed]} · ${rec} · juntos, ${nf(soma, 1)}% do gasto total${st.sa ? " sem aluguel" : ""}. Passe o cursor sobre um valor para ver o IC de 95%.`;
+    }
     salvar();
     detalhe();
   }
