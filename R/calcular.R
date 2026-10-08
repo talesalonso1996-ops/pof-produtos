@@ -96,3 +96,6 @@ chk2 <- d[, .(soma_consumo = sum(part_consumo)), by = .(Edicao, Recorte)]
 cat("\nSoma das participacoes na categoria: min", round(min(chk$soma_cat), 6), "max", round(max(chk$soma_cat), 6), "\n")
 print(chk2)
 cat("Linhas:", nrow(d), "| produtos:", uniqueN(d$cod_final), "\n")
+
+# status de cada produto/edicao (ausente, compartilhado, sem registro) e IC limitados
+source("R/status.R")

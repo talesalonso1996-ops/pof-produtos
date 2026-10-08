@@ -18,6 +18,7 @@ Recortes: Brasil (2002-2003 em diante, com intervalos de confiança de 95% do de
 | `docs/index.html` | A ferramenta (abre direto no navegador, sem servidor) |
 | `dados/produtos_pof.csv` | A tabela completa, uma linha por produto, edição e recorte (separador `;`) |
 | `R/calcular.R` | Cálculo a partir dos microdados harmonizados, com o pacote [pofanalise](https://github.com/talesalonso1996-ops/pofanalise) |
+| `R/status.R` | Classifica cada produto em cada edição (roda ao fim de `calcular.R`) |
 | `R/gerar_ferramenta.R` | Gera `docs/index.html` a partir da tabela |
 | `ferramenta/template.html` | Página da ferramenta, sem os dados |
 
@@ -34,13 +35,24 @@ Rscript R/gerar_ferramenta.R
 |---|---|
 | `Edicao`, `Recorte` | Edição da POF e recorte (Brasil ou Regiões metropolitanas) |
 | `cod_final`, `produto`, `categoria`, `subcategoria` | Folha, Nível 1 e Nível 2 da harmonização |
-| `qualidade`, `anos_ausentes` | Nota de qualidade da folha e edições em que ela não aparece |
+| `qualidade`, `anos_ausentes` | Nota de qualidade da folha e edições em que ela não aparece no de-para |
+| `status`, `somado_em` | Situação do produto na edição (ver abaixo) e, se compartilhado, a folha que recebe o gasto |
 | `prevalencia`, `prev_li`, `prev_ls` | % das famílias com gasto e IC 95% |
 | `ucs_com_gasto`, `N_UC` | Número de famílias na amostra com gasto e total no recorte |
 | `part_categoria` | % do gasto do Nível 1 |
 | `part_consumo`, `part_consumo_li`, `part_consumo_ls` | % da despesa de consumo e IC 95% |
 | `part_consumo_sem_aluguel` | % da despesa de consumo sem aluguel (comparável com 1987 e 1995) |
 | `gasto_medio_2018` | Gasto médio mensal por família (inclui quem não comprou), R$ de jan/2018 |
+
+## Status
+
+| `status` | Significado | Na ferramenta |
+|---|---|---|
+| `ok` | Código próprio, com registros nos microdados | valor |
+| `ausente` | Produto não investigado na edição | n/d |
+| `compartilhado` | O código original é o mesmo de outra folha (ex.: peixe fresco e salgado em 2002); o gasto está nela e não pode ser separado | n/d (métricas vazias no CSV) |
+| `sem_registro` | O código do de-para não tem nenhum registro nos microdados; o zero pode ser erro de código | 0 com ? |
+| `sem_compra` | O código existe, mas nenhuma família da amostra comprou | 0 |
 
 ## Cuidados
 

@@ -91,6 +91,9 @@ table.compacta th, table.compacta td { padding-inline: 8px; }
 .bar { height: 8px; border-radius: 0 4px 4px 0; background: var(--bar); min-width: 1px; }
 .bar.b2 { background: var(--bar-2); } .bar.b3 { background: var(--bar-3); }
 .var.sobe { color: var(--accent); font-weight: 600; } .var.desce { color: var(--br); font-weight: 600; }
+ul.status { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.nd { color: var(--muted); font-style: italic; cursor: help; }
+.susp { color: var(--warn); font-weight: 600; cursor: help; margin-left: 3px; }
 .vazio { padding: 28px; text-align: center; color: var(--muted); }
 
 aside.detalhe { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 14px; align-content: start; position: sticky; top: 90px; max-height: calc(100vh - 110px); overflow-y: auto; }
@@ -150,6 +153,7 @@ footer p { max-width: 95ch; }
     <p><b>Duas visões</b>: em <b>Por edição</b>, escolha uma edição e compare as métricas de cada produto lado a lado; em <b>Por métrica</b>, escolha uma métrica e acompanhe cada produto ao longo das edições, com a variação entre a primeira e a última.</p>
     <p><b>Prevalência</b>: % das famílias (unidades de consumo) com gasto no produto no período de referência do questionário, que varia por item (7 dias para alimentos da caderneta, 30 ou 90 dias para serviços, 12 meses para bens duráveis). Compare a prevalência do mesmo produto entre edições ou recortes, não entre produtos de períodos diferentes.</p>
     <p><b>% do gasto da categoria</b>: participação do produto no gasto do seu Nível 1 da harmonização (por exemplo, arroz dentro de "Cereais e leguminosas"). <b>% do gasto total</b>: participação na despesa de consumo (Níveis 1 a 26). Para comparar 1987 e 1995 com as edições seguintes, marque "sem aluguel": o aluguel estimado de quem mora em imóvel próprio só existe de 2002 em diante.</p>
+    <p><b>n/d</b>: o produto não foi investigado na edição, ou seu código original é o mesmo de outra folha (por exemplo, peixe fresco e salgado) e o gasto não pode ser separado nos microdados. <b>?</b>: o código indicado pela harmonização não tem registro nos microdados da edição; o zero pode ser erro de código. Passe o cursor para ver o motivo.</p>
     <p><b>Recortes</b>: 1987-1988 e 1995-1996 só cobrem as regiões metropolitanas; o Brasil começa em 2002-2003. Intervalos de confiança de 95% do desenho amostral (UPA e estrato) aparecem ao passar o cursor sobre os valores, de 2002 em diante. A POF 1987-1988 está em cruzados, por isso não tem gasto em reais.</p>
     <p class="mono" style="font-size:.78rem">Fonte: IBGE, POF 1987-2018, microdados harmonizados (HarmonizaPOF2026) com a harmonização de produtos v2 de Arthur Welle e as correções de pofanalise::pof_correcoes(). Cálculo: pof-produtos/R/calcular.R. Gerado em <span id="gerado"></span>.</p>
   </footer>
@@ -164,7 +168,7 @@ footer p { max-width: 95ch; }
   const ED = ["1987-1988", "1995-1996", "2002-2003", "2008-2009", "2017-2018"];
   const REC = ["Brasil", "Regiões metropolitanas"];
   const P = D.produtos;                      // metadados por produto
-  const V = D.valores;                       // linhas: [prod_idx, ed_idx, rec_idx, prev, prev_li, prev_ls, cat, tot, tot_li, tot_ls, tot_sa, gasto]
+  const V = D.valores;                       // linhas: [prod_idx, ed_idx, rec_idx, prev, prev_li, prev_ls, cat, tot, tot_li, tot_ls, tot_sa, gasto, status, somado_em]
   const byKey = new Map();
   V.forEach(r => byKey.set(r[0] + "|" + r[1] + "|" + r[2], r));
   const nf = (x, d = 1) => x == null ? "–" : x.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -174,6 +178,14 @@ footer p { max-width: 95ch; }
 
   const st = { modo: "edicao", met: "prev", ed: 4, rec: 0, cat: "", q: "", sa: false, sort: "part_total", dir: -1, sel: null };
   try { const s = JSON.parse(localStorage.getItem("pof-produtos") || "{}"); Object.assign(st, s, { sel: null, q: "" }); } catch (e) {}
+  const cats0 = new Set(P.map(p => p.categoria));
+  if (!["edicao", "metrica"].includes(st.modo)) st.modo = "edicao";
+  if (!["prev", "cat", "tot", "tot_sa", "gasto"].includes(st.met)) st.met = "prev";
+  if (![0, 1, 2, 3, 4].includes(st.ed)) st.ed = 4;
+  if (![0, 1].includes(st.rec)) st.rec = 0;
+  if (typeof st.cat !== "string" || (st.cat && !cats0.has(st.cat))) st.cat = "";
+  if (st.dir !== 1 && st.dir !== -1) st.dir = -1;
+  st.sa = st.sa === true;
   const salvar = () => { try { localStorage.setItem("pof-produtos", JSON.stringify({ modo: st.modo, met: st.met, ed: st.ed, rec: st.rec, cat: st.cat, sa: st.sa, sort: st.sort, dir: st.dir })); } catch (e) {} };
 
   document.getElementById("gerado").textContent = D.gerado;
@@ -213,8 +225,21 @@ footer p { max-width: 95ch; }
 
   const edsVisiveis = () => st.rec === 0 ? [2, 3, 4] : [0, 1, 2, 3, 4];
   const ultimaEd = () => 4;
-  const ic = (a, b, d) => a == null ? "" : ` title="IC 95%: ${nf(a, d)} a ${nf(b, d)}"`;
-  const cel = (v, m, cls, d, titulo) => `<div class="cel"${titulo}><span>${nf(v, d)}</span><div class="bar ${cls}" style="width:${v == null ? 0 : Math.max(0.5, 100 * Math.max(v, 0) / m)}%"></div></div>`;
+  const ic = (a, b, d) => a == null ? "" : ` title="IC 95%: ${fmt(a, d)} a ${fmt(b, d)}"`;
+  // valor positivo que arredondaria para zero aparece como "<0,001"
+  const fmt = (v, d) => v == null ? "–" : (v > 0 && v < 0.5 * Math.pow(10, -d)) ? "<" + nf(Math.pow(10, -d), d) : nf(v, d);
+  // status: 0 ok, 1 ausente, 2 compartilhado, 3 sem registro, 4 sem compra
+  const ND = {
+    1: () => "Produto não investigado nesta edição (não há itens dele no questionário da época).",
+    2: so => "O código original é o mesmo de outra folha" + (so ? " (" + so.split(", ").map(c => { const x = P.find(q => q.cod === c); return x ? x.produto + ", " + c : c; }).join("; ") + ")" : "") + "; o gasto está somado nela e não pode ser separado nos microdados.",
+    3: () => "O código indicado pela harmonização não tem nenhum registro nos microdados desta edição: o zero pode ser erro de código.",
+    4: () => "Código existe, mas nenhuma família da amostra comprou o produto nesta edição."
+  };
+  const cel = (v, m, cls, d, titulo, sts, so) => {
+    if (sts === 1 || sts === 2) return `<div class="cel"><span class="nd" title="${esc(ND[sts](so))}">n/d</span><div></div></div>`;
+    const q = sts === 3 ? `<span class="susp" title="${esc(ND[3]())}">?</span>` : "";
+    return `<div class="cel"${titulo}><span>${fmt(v, d)}${q}</span><div class="bar ${cls}" style="width:${v == null ? 0 : Math.max(0.5, 100 * Math.max(v, 0) / m)}%"></div></div>`;
+  };
   const celProd = p => {
     const q = p.qualidade && p.qualidade !== "Alta" ? `<span class="badge" title="Qualidade da harmonização: ${esc(p.qualidade)}">${esc(p.qualidade.split(" ")[0])}</span>` : "";
     return `<td class="prod"><b>${esc(p.produto)}${q}</b><small>${esc(p.categoria)} · ${esc(p.subcategoria)} · <span class="mono">${p.cod}</span></small></td>`;
@@ -225,7 +250,7 @@ footer p { max-width: 95ch; }
     const r = byKey.get(pi + "|" + st.ed + "|" + st.rec);
     if (!r) return null;
     return { pi, prevalencia: r[3], prev_li: r[4], prev_ls: r[5], part_categoria: r[6],
-             part_total: st.sa ? r[10] : r[7], tot_li: st.sa ? null : r[8], tot_ls: st.sa ? null : r[9], gasto_medio_2018: r[11] };
+             part_total: st.sa ? r[10] : r[7], tot_li: st.sa ? null : r[8], tot_ls: st.sa ? null : r[9], gasto_medio_2018: r[11], sts: r[12], so: r[13] };
   }
   // visao "por metrica": uma metrica, colunas = edicoes
   function linhaMetrica(pi) {
@@ -233,10 +258,11 @@ footer p { max-width: 95ch; }
     edsVisiveis().forEach(e => {
       const r = byKey.get(pi + "|" + e + "|" + st.rec);
       o["e" + e] = r ? r[m.i] : null; o["li" + e] = r && m.li ? r[m.li] : null; o["ls" + e] = r && m.ls ? r[m.ls] : null;
-      if (o["e" + e] != null) algum = true;
+      o["s" + e] = r ? r[12] : 0; o["so" + e] = r ? r[13] : "";
+      if (o["e" + e] != null || o["s" + e] === 1 || o["s" + e] === 2) algum = true;
     });
     const ev = edsVisiveis(), a = o["e" + ev[0]], b = o["e" + ev[ev.length - 1]];
-    o.var = a != null && b != null ? b - a : null;
+    o.var = a != null && b != null && o["s" + ev[0]] !== 3 && o["s" + ev[ev.length - 1]] !== 3 ? b - a : null;
     return algum ? o : null;
   }
 
@@ -302,16 +328,16 @@ footer p { max-width: 95ch; }
       const mx = Math.max(...rows.flatMap(o => ev.map(e => o.l["e" + e] || 0)), 1e-9);
       const dv = st.met === "gasto" ? 2 : m.d;
       corpo.innerHTML = rows.map(({ p, l }) => `<tr tabindex="0" data-pi="${l.pi}" class="${st.sel === l.pi ? "ativo" : ""}">${celProd(p)}` +
-        ev.map(e => `<td>${cel(l["e" + e], mx, m.cls, m.d, ic(l["li" + e], l["ls" + e], m.d))}</td>`).join("") +
+        ev.map(e => `<td>${cel(l["e" + e], mx, m.cls, m.d, ic(l["li" + e], l["ls" + e], m.d), l["s" + e], l["so" + e])}</td>`).join("") +
         `<td class="num var ${l.var == null ? "" : l.var > 0 ? "sobe" : l.var < 0 ? "desce" : ""}">${l.var == null ? "–" : (l.var > 0 ? "+" : "") + nf(l.var, dv)}</td></tr>`).join("");
     } else {
       const mx = { prevalencia: 100, part_categoria: Math.max(...rows.map(o => o.l.part_categoria || 0), 1e-9),
                    part_total: Math.max(...rows.map(o => o.l.part_total || 0), 1e-9) };
       corpo.innerHTML = rows.map(({ p, l }) => `<tr tabindex="0" data-pi="${l.pi}" class="${st.sel === l.pi ? "ativo" : ""}">${celProd(p)}
-        <td>${cel(l.prevalencia, mx.prevalencia, "", 1, ic(l.prev_li, l.prev_ls, 2))}</td>
-        <td>${cel(l.part_categoria, mx.part_categoria, "b2", 2, "")}</td>
-        <td>${cel(l.part_total, mx.part_total, "b3", 3, ic(l.tot_li, l.tot_ls, 3))}</td>
-        <td class="num">${l.gasto_medio_2018 == null ? "–" : nf(l.gasto_medio_2018, 2)}</td></tr>`).join("");
+        <td>${cel(l.prevalencia, mx.prevalencia, "", 1, ic(l.prev_li, l.prev_ls, 2), l.sts, l.so)}</td>
+        <td>${cel(l.part_categoria, mx.part_categoria, "b2", 2, "", l.sts, l.so)}</td>
+        <td>${cel(l.part_total, mx.part_total, "b3", 3, ic(l.tot_li, l.tot_ls, 3), l.sts, l.so)}</td>
+        <td class="num">${l.sts === 1 || l.sts === 2 ? `<span class="nd" title="${esc(ND[l.sts](l.so))}">n/d</span>` : l.gasto_medio_2018 == null ? "–" : fmt(l.gasto_medio_2018, 2)}</td></tr>`).join("");
     }
     const rec = ["Brasil", "regiões metropolitanas"][st.rec];
     if (porMet) document.getElementById("resumo").textContent = `${rows.length} produtos · ${MET[st.met].nome} · ${rec} · edições nas colunas. Passe o cursor sobre um valor para ver o IC de 95% (2002 em diante).`;
@@ -345,6 +371,12 @@ footer p { max-width: 95ch; }
     return `<div class="mini"><span class="label">${titulo}</span>${s}</svg></div>`;
   }
 
+  // situacao do produto nas edicoes em que nao ha numero confiavel
+  function avisos(pi) {
+    const it = ED.map((e, ei) => { const r = byKey.get(pi + "|" + ei + "|1") || byKey.get(pi + "|" + ei + "|0"); return r && r[12] ? `<li><b>${e}</b>: ${esc(ND[r[12]](r[13]))}</li>` : ""; }).join("");
+    return it ? `<ul class="meta status">${it}</ul>` : "";
+  }
+
   function detalhe() {
     const box = document.getElementById("detalhe"), lay = document.getElementById("layout");
     if (st.sel == null) { box.hidden = true; lay.classList.remove("com-detalhe"); return; }
@@ -357,7 +389,8 @@ footer p { max-width: 95ch; }
       ${mini("% do gasto da categoria", 6, null, null, 2, st.sel)}
       ${mini(st.sa ? "% do gasto total (sem aluguel)" : "% do gasto total", st.sa ? 10 : 7, st.sa ? null : 8, st.sa ? null : 9, 3, st.sel)}
       ${mini("Gasto médio mensal (R$ de 2018)", 11, null, null, 2, st.sel)}
-      <div class="meta"><span>Qualidade da harmonização: <b>${esc(p.qualidade || "–")}</b></span>${p.ausente ? `<span>Ausente em: ${esc(p.ausente)}</span>` : ""}</div>`;
+      <div class="meta"><span>Qualidade da harmonização: <b>${esc(p.qualidade || "–")}</b></span>${p.ausente ? `<span>Ausente em: ${esc(p.ausente)}</span>` : ""}</div>
+      ${avisos(st.sel)}`;
     document.getElementById("fechar").addEventListener("click", () => { st.sel = null; render(); });
   }
 
